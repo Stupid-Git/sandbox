@@ -1,0 +1,4 @@
+#!/bin/sh
+for vm in tinc1 tinc2; do
+  vagrant ssh -c "/vagrant/tools/clean.sh" $vm
+done
