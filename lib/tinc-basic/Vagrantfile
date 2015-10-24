@@ -4,7 +4,7 @@ Vagrant.configure(2) do |config|
   config.vm.define "tinc1" do |tinc|
     tinc.vm.box = "ubuntu/vivid64"
     tinc.vm.hostname = "tinc1"
-    tinc.vm.provision "shell", path: "./tools/provision.sh"
+    tinc.vm.provision "shell", path: "./provision.sh"
     tinc.vm.provider "virtualbox" do |p|
       p.name = "tinc1"
       p.memory = 512
@@ -15,7 +15,7 @@ Vagrant.configure(2) do |config|
   config.vm.define "tinc2" do |tinc|
     tinc.vm.box = "ubuntu/vivid64"
     tinc.vm.hostname = "tinc2"
-    tinc.vm.provision "shell", path: "./tools/provision.sh"
+    tinc.vm.provision "shell", path: "./provision.sh"
     tinc.vm.provider "virtualbox" do |p|
       p.name = "tinc2"
       p.memory = 512

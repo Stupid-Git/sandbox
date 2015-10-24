@@ -4,5 +4,5 @@ software and systems engineering.
 
 ## Contents
 
-* `./lib/tinc-basic`: a simple 2 node VPN setup using Vagrant and Tinc.
+* [./lib/tinc-basic](lib/tinc-basic): a simple 2 node VPN setup using Vagrant and Tinc.
 

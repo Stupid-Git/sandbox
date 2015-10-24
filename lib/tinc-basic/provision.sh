@@ -69,6 +69,9 @@ EOF
   echo "Created RSA Keys for $HOSTNAME"
 }
 
+# Update host file
+sed -i -r 's/(127\.0\.0\.1 localhost)/\1\n10.0.0.1 tinc1\n10.0.0.2 tinc2\n/' /etc/hosts
+
 # Log files
 logs=$etc/logs
 mkdir -p $logs
@@ -83,7 +86,7 @@ pid=$(pidof tincd)
 # Start Web Server
 pid=$(pidof nodejs)
 (( pid )) || {
-  nodejs /vagrant/tools/server.js >$logs/http.log &
+  nodejs /vagrant/server.js >$logs/http.log &
   echo "Started HTTP Server with PID $!"
 }
 
