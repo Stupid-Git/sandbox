@@ -2,7 +2,9 @@ Vagrant.configure(2) do |config|
   config.vm.network "private_network", type: "dhcp"
 
   config.vm.define "tinc1" do |tinc|
-    tinc.vm.box = "ubuntu/vivid64"
+    # upgraded from original example "ubuntu/vivid64" -> "ubuntu/xenial64"
+    # $ vagrant box add ubuntu/xenial64 https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box
+    tinc.vm.box = "ubuntu/xenial64"
     tinc.vm.hostname = "tinc1"
     tinc.vm.provision "shell", path: "./provision.sh"
     tinc.vm.provider "virtualbox" do |p|
@@ -13,7 +15,8 @@ Vagrant.configure(2) do |config|
   end
 
   config.vm.define "tinc2" do |tinc|
-    tinc.vm.box = "ubuntu/vivid64"
+    # upgraded from original example "ubuntu/vivid64" -> "ubuntu/xenial64"
+    tinc.vm.box = "ubuntu/xenial64"
     tinc.vm.hostname = "tinc2"
     tinc.vm.provision "shell", path: "./provision.sh"
     tinc.vm.provider "virtualbox" do |p|
@@ -23,4 +26,3 @@ Vagrant.configure(2) do |config|
     end
   end
 end
-
