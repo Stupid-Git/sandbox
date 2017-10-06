@@ -118,7 +118,7 @@ EOF
   echo "Created RSA Keys for $HOSTNAME"
 }
 
-
+# got form here: https://gist.github.com/irazasyed/a7b0a079e7727a4315b9
 function addhost() {
     HOSTNAME=$1
     IP=$2

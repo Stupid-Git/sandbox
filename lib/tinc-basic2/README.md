@@ -1,7 +1,30 @@
 # Tinc Basic2
+I had used Vagrant ages ago and I wanted to experiment with tinc, to when I came across *Sandbox* by **James Bishop** I had to ***fork it***  [https://github.com/jimbishopp/sandbox].  
+
 This directory contains a modified example based on the example
   (original in ../tinc_basic) 2 node [Tinc][] VPN configuration using
-[Vagrant][].
+[Vagrant][].   
+Use ***Meld*** or your favorite compare tool to see what is different.   
+
+I made modifications here and there> The mods I made to the tinc-up and tinc-down files have some unnecessary commands, and need so work to avoid warnings.
+
+## Notes
+I am running my set-up on Debian 9. The original I think was run on an Apple machine.
+### - Get Vagrant
+https://www.vagrantup.com/downloads.html
+
+### - Get a Linux Image to Run via Vagrant and VirtualBox
+I went here http://www.vagrantbox.es/ and searched for "ubuntu server".   
+I added the box in the following way  
+```bash
+$ vagrant box add ubuntu/xenial64  https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box    
+
+# The username and password for the box can be found in the  
+$ cat /home/user/.vagrant.d/boxes/ubuntu-VAGRANTSLASH-xenial64/0/virtualbox/Vagrantfile
+```
+
+### - The 'tun0' Tunnel Name
+The original version used a Hardcoded 'tun0' name for the tunnel network interface, but as this name is very common, I used the $INTERFACE shell variable which is set when [tincd -n sandbox -D] is executed. The -n flag selects the interface (i.e. `/etc/tinc/sandbox`) and sets the $INTERFACE variable which is used in the **tinc-up** and **tinc-down** files.
 
 
 ## Synopsis
@@ -9,7 +32,7 @@ This directory contains a modified example based on the example
 ```bash
 # Setup & Run
 $ git clone https://github.com/Stupid-Git/sandbox.git
-$ cd sandbox/lib/tinc-basic
+$ cd sandbox/lib/tinc-basic2
 $ make
 
 # Test: make HTTP request through VPN
@@ -33,12 +56,12 @@ This demo was created with the following configuration. Be sure you have these
 tools installed before trying this demo (it may work with earlier versions and
 on other platforms).
 
-* Debian 6 (prev: OSX/Darwin 10.11.1)
-* Tmux x.x (prev: 2.1)
-* GNU Make x.x (prev:3.81)
-* VirtualBox 5.1.28 (prev: 4.3.30)
-* Vagrant x.x (prev: 1.7.4)
-* GNU Bashx.x (prev: 4.3.42)
+* Debian 9  (prev: OSX/Darwin 10.11.1)
+* Tmux 2.3  (prev: 2.1)
+* GNU Make 4.1 (prev:3.81)
+* VirtualBox Version 5.1.28 r117968 (Qt5.7.1)  (prev: 4.3.30)
+* Vagrant 2.0.0 (prev: 1.7.4)
+* GNU Bash 4.4.12 (prev: 4.3.42)
 
 ## Details
 The example creates two Ubuntu virtual machines. It then provisions each VM
@@ -57,9 +80,9 @@ when using [VirtualBox][] as the virtual machine engine, will create a second
 network interface that allows both hosts to communicate with each other. At
 the time of this writing the network was assigned 172.28.128.0/24. The
 provision script will automatically detect the private IP address for each host
-as long as the private interface name is `eth1`.
+as long as the private interface name is  `enp0s8` `Previously: eth1`.
 
-| Host  | DHCP eth1 IP  | Tinc VPN IP | Tinc Interface | HTTP Port |
+| Host  | DHCP enp0s8/eth1 IP  | Tinc VPN IP | Tinc Interface | HTTP Port |
 |:-----:|:-------------:|:-----------:|:--------------:|:---------:|
 | tinc1 | 172.28.128.3  | 10.0.0.1    |   tun0         |   8080    |
 | tinc2 | 172.28.128.4  | 10.0.0.2    |   tun0         |   8080    |
@@ -70,11 +93,11 @@ and can be anything. I decided it made some sense to name it sandbox for
 this demo.
 
 * `tinc.conf`: configuration for the host/network (i.e. tinc1/sandbox)
-* `tinc-up`: brings up the `tun0` network interface when tinc starts
-* `tinc-down`: brings down the `tun0` network interface when tinc stops
+* `tinc-up`: brings up the $INTERFACE=sandbox  (`tun0`) network interface when tinc starts
+* `tinc-down`: brings down the $INTERFACE=sandbox  (`tun0`) network interface when tinc stops
 * `hosts/*`: contains a file for each host in the sandbox network; in this case
   tinc1 and tinc2. Each file should contains its non-VPN interface, which in
-  this case is the `eth1` IP address; and the subnet that the Tinc VPN network
+  this case is the `enp0s8`/`eth1` IP address; and the subnet that the Tinc VPN network
   will handle, which is a single host (i.e. tinc1/10.0.0.1).
 
 ### Var Directory
@@ -99,7 +122,7 @@ through the VPN to their sibling host.
 
 * HTTP Request from Tinc 1 to Tinc 2 HTTP Server: `curl tinc2:8080`
 * Request goes through the tun0 network interface to the Tinc daemon which
-  encrypts the packets and sends them to the tinc2 eth1 interface on port 655.
+  encrypts the packets and sends them to the tinc2 `enp0s8`/eth1 interface on port 655.
 * The tinc daemon on tinc2 then decrypts the packet and forwards it to port 8080
 * HTTP server processes the request and sends a response which flows back through
   the VPN.
@@ -155,8 +178,19 @@ and the interface name it should bind to:
 ```bash
 $ cat ./var/tinc1/sandbox/tinc.conf
 Name = tinc1
+Mode = switch  #karel added this
 AddressFamily = ipv4
-Interface = tun0
+#Interface = tun0  #karel removed this
+PrivateKeyFile  = /etc/tinc/sandbox/rsa_key.priv  #karel added this
+
+$ cat ./var/tinc2/sandbox/tinc.conf
+Name = tinc2
+Mode = switch  #karel added this
+AddressFamily = ipv4
+#Interface = tun0
+PrivateKeyFile  = /etc/tinc/sandbox/rsa_key.priv  #karel added this
+ConnectTo = tinc1  #karel added this
+
 ```
 
 Name and interface can be practically anything. In our case we remained sane
@@ -172,7 +206,20 @@ we simply created the `tun0` interface.
 ```bash
 $ cat ./var/tinc1/sandbox/tinc-up
 #!/bin/bash
-ifconfig tun0 10.0.0.1 netmask 255.255.255.0
+# OLD -> ifconfig tun0 10.0.0.1 netmask 255.255.255.0
+#TINC1
+ip link set $INTERFACE up mtu 1280 txqueuelen 1000
+ip addr  add 10.0.0.1/24 dev $INTERFACE
+ip route add 10.0.0.0/24 dev $INTERFACE
+ip route add 10.0.2.0/24 via 10.0.0.2
+
+$ cat ./var/tinc1/sandbox/tinc-up
+#!/bin/bash
+# OLD -> ifconfig tun0 10.0.0.2 netmask 255.255.255.0
+#TINC2
+ip link set $INTERFACE up mtu 1280
+ip addr  add 10.0.0.2/24 dev $INTERFACE
+ip route add 10.0.0.0/24 via 10.0.0.1
 ```
 
 The IP address is the address that we're assigning to this node in the VPN
@@ -187,7 +234,21 @@ we only need to remove the interface.
 ```bash
 $ cat ./var/tinc1/sandbox/tinc-down
 #!/bin/bash
-ifconfig tun0 down
+# OLD -> ifconfig tun0 down
+#TINC1
+ip route del 10.0.2.0/24 via 10.0.0.2
+ip route del 10.0.0.0/24 dev $INTERFACE
+ip addr  del 10.0.0.1/24 dev $INTERFACE
+ip link set $INTERFACE down
+
+$ cat ./var/tinc2/sandbox/tinc-down
+#!/bin/bash
+# OLD -> ifconfig tun0 down
+#TINC2
+ip route del default via 10.0.0.1
+ip addr  del 10.0.0.2/24 dev $INTERFACE
+ip link set $INTERFACE down
+
 ```
 
 ### hosts/*
